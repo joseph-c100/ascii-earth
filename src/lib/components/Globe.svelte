@@ -14,6 +14,8 @@
 	let geoData: GeoData | null = null;
 	let loading = true;
 	let output = '';
+	let charWidth = 6;
+	let charHeight = 10;
 
 	// Load geographic data on mount
 	onMount(async () => {
@@ -24,7 +26,7 @@
 			console.error('Failed to load geographic data:', error);
 		}
 
-		// Update canvas size based on window
+		measureCharDimensions();
 		updateCanvasSize();
 		window.addEventListener('resize', updateCanvasSize);
 
@@ -39,19 +41,44 @@
 		};
 	});
 
-	/**
-	 * Update canvas dimensions based on window size
-	 */
+	// measure actual rendered character dimensions from a hidden clone with identical styles
+	function measureCharDimensions() {
+		const el = document.createElement('pre');
+		el.style.cssText =
+			"font-family:'Courier New','Monaco','Menlo',monospace;font-size:10px;line-height:1;letter-spacing:0;position:absolute;top:-9999px;visibility:hidden;white-space:pre";
+		const cols = 20;
+		const rows = 10;
+		el.textContent = Array(rows).fill('X'.repeat(cols)).join('\n');
+		document.body.appendChild(el);
+		const rect = el.getBoundingClientRect();
+		document.body.removeChild(el);
+		charWidth = rect.width / cols;
+		charHeight = rect.height / rows;
+	}
+
+	// for the globe to appear circular the grid must satisfy:
+	//   2 * width * charWidth = height * charHeight
+	// derived from renderer aspectRatio=0.5 and equal physical pixel extent in x/y
 	function updateCanvasSize() {
 		if (!canvasRef) return;
 
-		const width = Math.floor(window.innerWidth / 10);
-		const height = Math.floor(window.innerHeight / 16);
+		const targetRatio = charHeight / (2 * charWidth); // width / height
+		const maxCols = Math.floor(window.innerWidth / charWidth);
+		const maxRows = Math.floor(window.innerHeight / charHeight);
+
+		let cols: number, rows: number;
+		if (maxCols / maxRows > targetRatio) {
+			rows = maxRows;
+			cols = Math.round(rows * targetRatio);
+		} else {
+			cols = maxCols;
+			rows = Math.round(cols / targetRatio);
+		}
 
 		globeState.update((state) => ({
 			...state,
-			width: Math.max(40, Math.min(120, width)),
-			height: Math.max(20, Math.min(60, height))
+			width: Math.max(20, cols),
+			height: Math.max(10, rows)
 		}));
 	}
 
@@ -220,18 +247,5 @@
 
 	.globe-canvas:active {
 		cursor: grabbing;
-	}
-
-	.controls {
-		margin-top: 20px;
-		color: #0a0;
-		font-family: monospace;
-		font-size: 12px;
-		text-align: center;
-		opacity: 0.7;
-	}
-
-	.controls p {
-		margin: 5px 0;
 	}
 </style>

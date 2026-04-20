@@ -37,7 +37,7 @@ const initialState: GlobeState = {
 	isDragging: false,
 	lastMouseX: 0,
 	lastMouseY: 0,
-	autoRotate: false,
+	autoRotate: true,
 	rotationSpeed: 0.01
 };
 
