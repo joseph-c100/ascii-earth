@@ -25,7 +25,8 @@ export async function loadGeoData(): Promise<GeoData> {
 	}
 
 	try {
-		const response = await fetch('/data/earth-110m.geojson');
+		const { base } = await import('$app/paths');
+		const response = await fetch(`${base}/data/earth-110m.geojson`);
 		if (!response.ok) {
 			throw new Error(`Failed to load geo data: ${response.statusText}`);
 		}
